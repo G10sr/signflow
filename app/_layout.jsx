@@ -31,19 +31,19 @@ export default function RootLayout() {
       </UserProvider>
       )
     }
-
-    const justlogo = pathname === '/login' || pathname === "/register"
+    const justlogo = pathname === '/login' || pathname === "/register" || pathname.startsWith("/lesson/");
     if (justlogo){
       return (
-<UserProvider>
-<GuestOnly>
-      <View style={{ flex: 1 }}>
-        <Slot />
-        <Text style={[styles.titulo, { color: theme.title }]}>SignFlow</Text>
-
-      </View>
-</GuestOnly>
-</UserProvider>
+    <UserProvider>
+      <UserOnly>
+        <LessonsProvider>
+        <View style={{ flex: 1 }}>
+          <Slot />
+          <Text style={[styles.titulo, { color: theme.title }]}>SignFlow</Text>
+        </View>
+        </LessonsProvider>
+      </UserOnly>
+    </UserProvider>
       )
     }
 
