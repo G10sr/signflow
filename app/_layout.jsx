@@ -9,6 +9,7 @@ import { UserProvider } from '../contexts/UserContext';
 import UserOnly from '../components/auth/UserOnly';
 import GuestOnly from '../components/auth/GuestOnly';
 import { LessonsProvider } from '../contexts/LessonsContext';
+import { DoneProvider } from '../contexts/DoneContext';
 
 export default function RootLayout() {
     const router = useRouter();
@@ -36,12 +37,14 @@ export default function RootLayout() {
       return (
     <UserProvider>
       <UserOnly>
+        <DoneProvider>
         <LessonsProvider>
         <View style={{ flex: 1 }}>
           <Slot />
           <Text style={[styles.titulo, { color: theme.title }]}>SignFlow</Text>
         </View>
         </LessonsProvider>
+        </DoneProvider>
       </UserOnly>
     </UserProvider>
       )
@@ -51,6 +54,7 @@ export default function RootLayout() {
   return (
     <UserProvider>
           <UserOnly>
+            <DoneProvider>
             <LessonsProvider>
     <View style={{ flex: 1 }}>
       <Slot />
@@ -77,6 +81,7 @@ export default function RootLayout() {
       </ThemeNavbar>
     </View>
                 </LessonsProvider>
+                </DoneProvider>
 
         </UserOnly>
 
