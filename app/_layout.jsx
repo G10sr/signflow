@@ -32,8 +32,24 @@ export default function RootLayout() {
       </UserProvider>
       )
     }
-    const justlogo = pathname === '/login' || pathname === "/register" || pathname.startsWith("/lesson/");
+    const justlogo = pathname === '/login' || pathname === "/register";
     if (justlogo){
+      return (
+    <UserProvider>
+      <GuestOnly>
+        <DoneProvider>
+        <LessonsProvider>
+        <View style={{ flex: 1 }}>
+          <Slot />
+          <Text style={[styles.titulo, { color: theme.title }]}>SignFlow</Text>
+        </View>
+        </LessonsProvider>
+        </DoneProvider>
+      </GuestOnly>
+    </UserProvider>
+      )
+    }
+    if (pathname.startsWith("/lesson/")){
       return (
     <UserProvider>
       <UserOnly>
@@ -49,7 +65,6 @@ export default function RootLayout() {
     </UserProvider>
       )
     }
-
     // Layout
   return (
     <UserProvider>

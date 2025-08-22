@@ -1,51 +1,55 @@
 import { createContext } from "react";
 import { databases } from "../lib/appwrite";
 import { useUser } from "../hooks/useUser";
-import { ID } from "appwrite";
-import { Permission, Role } from "react-native-appwrite";
+import { Query, ID } from "appwrite";
 
-// You should get this ID from the Appwrite console
-const USERLESSONS_COLLECTION_ID = "68a7695b001860d47d17"; 
+const USERLESSONS_COLLECTION_ID = "68a7695b001860d47d17";
 const DATABASE_ID = "68674c500017f2f643f6";
 
 export const DoneContext = createContext();
 
 export function DoneProvider({ children }) {
-    const { user } = useUser();
-    const newId = ID.unique();
+  const { user } = useUser();
 
-    /**
-     * Creates a new document in the user_lessons collection to record a completed lesson.
-     * @param {string} lessonId The ID of the lesson that was completed.
-     */
-    async function completeLesson(lessonId) {
-        if (!user) {
-            console.error("User not authenticated. Cannot record completed lesson.");
-            return;
+  // registra una lección completada
+  async function completeLesson(lessonId) {
+    if (!user) return console.error("User not authenticated");
+    try {
+      const response = await databases.createDocument(
+        DATABASE_ID,
+        USERLESSONS_COLLECTION_ID,
+        ID.unique(),
+        {
+          user_id: user.$id,
+          lessons: lessonId,
+          completed_at: new Date().toISOString(),
         }
-
-        try {
-            const response = await databases.createDocument(
-                DATABASE_ID,
-                USERLESSONS_COLLECTION_ID,
-                ID.unique(), // genera un documentId único
-                {
-                    user_id: user.$id,
-                    lessons: lessonId,
-                    completed_at: new Date().toISOString()
-                }
-                );
-            console.log("Lección completada registrada:", response);
-            return response;
-        } catch (error) {
-            console.error("Error al registrar la lección completada:", error);
-        }
+      );
+      return response;
+    } catch (error) {
+      console.error("Error completing lesson:", error);
     }
+  }
 
-    return (
-        <DoneContext.Provider value={{ completeLesson }}>
-            {children}
-        </DoneContext.Provider>
-    );
+  // obtiene todas las lecciones completadas del usuario
+  async function getUsersLessons() {
+    if (!user) return [];
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        USERLESSONS_COLLECTION_ID,
+        [Query.equal("user_id", user.$id)]
+      );
+      return response.documents;
+    } catch (error) {
+      console.error("Error fetching lessons:", error);
+      return [];
+    }
+  }
+
+  return (
+    <DoneContext.Provider value={{ completeLesson, getUsersLessons }}>
+      {children}
+    </DoneContext.Provider>
+  );
 }
-

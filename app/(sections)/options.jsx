@@ -1,55 +1,74 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, FlatList, TextInput } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import ThemeView from '../../components/ThemeView';
 import ThemedCard from '../../components/ThemedCard';
 import ThemedText from '../../components/ThemeText';
-import { databases } from '../../lib/appwrite';
-
-const DATABASE_ID = "68674c500017f2f643f6";
-const STATS_COLLECTION_ID = '68676a80000654274590';
-const STATS_DOC_ID = '68676a80000654274591';
+import ThemedText2 from '../../components/ThemeText2';
+import { useDone } from '../../hooks/useDone';
+import CActivityIndicator from '../../components/CActivityInd';
 
 const Options = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { getUsersLessons } = useDone();
+  const [data, setData] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+   const [loading, setLoading] = useState(true); // 👈 estado de carga
 
   useEffect(() => {
-    const fetchStats = async () => {
+    (async () => {
       try {
-        const doc = await databases.getDocument(
-          DATABASE_ID,
-          STATS_COLLECTION_ID,
-          STATS_DOC_ID
-        );
-        setStats(doc);
-      } catch (e) {
-        setError('No se pudieron cargar las estadísticas');
+        const lessons = await getUsersLessons();
+
+        const grouped = {};
+        lessons.forEach((item) => {
+          const key = typeof item.lessons === "object" ? item.lessons.title : item.lessons;
+          if (!grouped[key]) {
+            grouped[key] = { ...item, count: 1 };
+          } else {
+            grouped[key].count += 1;
+          }
+        });
+
+        const groupedArray = Object.values(grouped);
+        setData(groupedArray);
+        setFiltered(groupedArray);
+      } finally {
+        setLoading(false); // 👈 dejar de cargar
       }
-      setLoading(false);
-    };
-    fetchStats();
+    })();
   }, []);
 
-  return (
-    <ThemeView style={styles.container}>
-      <View style={styles.centerView}>
-        <ThemedCard style={styles.card}>
-          {loading && <ThemedText>Cargando...</ThemedText>}
-          {error && <ThemedText>{error}</ThemedText>}
-          {stats && (
-            <>
-              <ThemedText style={styles.title}>Estadísticas</ThemedText>
-              {/* Muestra aquí los campos que tengas en tu documento stats */}
-              {Object.entries(stats).map(([key, value]) => (
-                key !== '$id' && key !== '$collectionId' && key !== '$databaseId' && key !== '$createdAt' && key !== '$updatedAt' ? (
-                  <ThemedText key={key} style={styles.item}>{key}: {String(value)}</ThemedText>
-                ) : null
-              ))}
-            </>
-          )}
-        </ThemedCard>
-      </View>
+  if (loading) {
+    return (
+      <CActivityIndicator></CActivityIndicator>
+    );
+  }
+
+    return (
+    <ThemeView>    
+
+      <FlatList
+        style={styles.scrollview}
+        contentContainerStyle={{ flexGrow: 1 }}
+        data={filtered}
+        keyExtractor={(item) => item.$id}
+        renderItem={({ item }) => (
+          <ThemedCard style={styles.card}>
+            <View style={styles.cardInner}>
+              <View style={styles.cardContent}>
+                <ThemedText style={styles.title}>
+                  {typeof item.lessons === "object" ? item.lessons.title : item.lessons}
+                </ThemedText>
+                <ThemedText style={styles.date}>
+                  Última completada: {new Date(item.completed_at).toLocaleString()}
+                </ThemedText>
+
+                <ThemedText2 style={styles.meta}>{item.count} <ThemedText style={styles.littletext}>veces completada</ThemedText></ThemedText2>
+              </View>
+            </View>
+          </ThemedCard>
+        )}
+        ListFooterComponent={<View style={{ height: 100 }} />}
+      />
     </ThemeView>
   );
 };
@@ -57,27 +76,54 @@ const Options = () => {
 export default Options;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centerView: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 20,
-  },
-  card: {
-    minWidth: 300,
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  item: {
-    fontSize: 18,
-    marginVertical: 4,
-  },
+  scrollview:{
+        marginTop:120, 
+        flex: 1,
+        width:'100%',
+        paddingHorizontal: 5
+    },
+    card: {
+        flex: 1,
+        minHeight: 200,
+        marginBottom: 20,
+    },
+    cardInner: {
+        flex: 1,
+        justifyContent: 'space-between',
+    },
+    cardContent: {
+        flexShrink: 1,
+        paddingStart:10,
+        paddingEnd:10
+    },
+    buttonContainer: {
+        marginTop: 20,
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 36,
+        fontWeight: 'bold',
+        maxWidth: '80%',
+        marginStart:10,
+        marginTop:10,
+        flexWrap: 'wrap',
+    },
+    description:{
+        fontSize: 18,
+        marginStart:10,
+        marginTop:5,
+        maxWidth: '80%',
+        flexWrap: 'wrap',
+    }, 
+    meta:{
+      alignSelf: "center",
+      fontSize:70,
+      fontWeight:"800",
+      marginEnd:30,
+      
+    }, 
+    date:{
+      marginStart:10,
+      fontSize:12
+    }
 });
