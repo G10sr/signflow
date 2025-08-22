@@ -71,6 +71,7 @@ const styles = StyleSheet.create({
     container:{
         flex:1,
         alignItems: "center",
+        paddingTop: 120
     },
     buttonContainer: {
         marginTop: 20,
